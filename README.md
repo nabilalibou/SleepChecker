@@ -1,19 +1,40 @@
 # SleepChecker
 
-Wrapper of the yasa package (https://github.com/raphaelvallat/yasa/tree/master) to have a simple class allowing to:
+Wrapper of the [yasa](https://raphaelvallat.com/yasa/build/html/index.html) [[1]](#1) 
+SleepStaging module which is an automatic sleep staging algorithm. The idea behind **SleepChecker** is to have a simple 
+pacakge to robustly detect when the subject has fallen asleep, as this happens much more than we think (especially 
+during Resting State paradigms).  
+To achieve this, the **SleepChecker** class provides the methods to:
+- Automatically combine the sleep stages predictions into one final robust prediction.
+- Get the total percentage of time asleep during an EEG recording session.
+- Annotate sleeping time segments on the [MNE](https://mne.tools/stable/index.html) raw EEG data.
 
-=> wrap only:
-Automatic sleep staging function : automatic_staging: Automatic sleep staging of polysomnography data.
+# Installation
 
+```
+git clone https://github.com/Nabil-AL/SleepChecker.git
+pip install -r requirements.txt
+```
 
-Combine predictions from several EEG electrodes to return the Sleep Stages predicted
+# Example
 
-Method to get overall sleep percentage detected on the EEG data
+```python
+import mne
+from SleepChecker import SleepChecker
 
-Method to directly annotate the sleep sequences on the MNE Raw data
+# Load an EDF file using MNE
+raw_eeg = mne.io.read_raw_edf("myfile.edf", preload=True)  
+sc = SleepChecker(raw_eeg, eeg_name=['C4', 'C3'], eog_name="HEOGR-HEOGL", ref_channel=["M1", "M2"])
+# Return an array containing the predicted sleep phases among ['W', 'N1', 'N2', 'N3', 'R']
+sleep_stages = sc.predict()  
+# get the overall % of time asleep
+sleep_percent = sc.get_tot_sleep_percentage(sleep_stages)  
+# annotate the sleeping time spans directly on the raw data
+raw_eeg = sc.annotate_data()  
+```
 
-I use this class to detect whether the subjects have fallen asleep during the protocol, especially when it is resting state eyes closed (it is more frequent than we think).
+# References
 
-Can deliver a sleep score (percentage of period detected as asleep in the data), and you can directly annotate these sleep period on your MNE raw data using ...
-
-Vallat, Raphael, and Matthew P. Walker. "An open-source, high-performance tool for automated sleep staging." Elife 10 (2021). doi: https://doi.org/10.7554/eLife.70092
+<a id="1">[1]</a>
+Vallat, Raphael, and Matthew P. Walker. "An open-source, high-performance tool for automated sleep staging." Elife 10 
+(2021). doi: https://doi.org/10.7554/eLife.70092
