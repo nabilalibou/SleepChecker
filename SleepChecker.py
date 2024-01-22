@@ -5,24 +5,6 @@ import re
 from checks import is_list_of_strings
 
 
-def _which_hemisphere(chan_names):
-    """
-    Return a list of bool reflecting whether the channel names are from right or left hemisphere (10-20 system).
-    :param chan_names: (list of str) list of channel names.
-    :return: is_right_hemisphere (list of bool) True if channel is from right hemisphere, False if channel is from left
-        hemisphere.
-    """
-    try:
-        chan_number = [int(re.search("[0-9]+", chan).group()) for chan in chan_names]
-    except AttributeError as e:
-        raise ValueError(
-            f"{e}. Input channel names should belong to one of the 2 hemisphere according to the 10-20 "
-            "system"
-        )
-    is_right_hemisphere = [not num & 1 for num in chan_number]
-    return is_right_hemisphere
-
-
 class SleepChecker:
     """
     Wrapper of the yasa SleepStaging module which is an automatic sleep staging algorithm.
@@ -64,6 +46,24 @@ class SleepChecker:
         self._sleep_stages = None
         self._tot_sleep_percentage = None
         self._sleep_onset = []
+
+    @staticmethod
+    def _which_hemisphere(chan_names):
+        """
+        Return a list of bool reflecting whether the channel names are from right or left hemisphere (10-20 system).
+        :param chan_names: (list of str) list of channel names.
+        :return: is_right_hemisphere (list of bool) True if channel is from right hemisphere, False if channel is from left
+            hemisphere.
+        """
+        try:
+            chan_number = [int(re.search("[0-9]+", chan).group()) for chan in chan_names]
+        except AttributeError as e:
+            raise ValueError(
+                f"{e}. Input channel names should belong to one of the 2 hemisphere according to the 10-20 "
+                "system"
+            )
+        is_right_hemisphere = [not num & 1 for num in chan_number]
+        return is_right_hemisphere
 
     def _combine_predictions(self, predictions):
         """
