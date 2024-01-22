@@ -5,25 +5,37 @@ import re
 from checks import is_list_of_strings
 
 
+def _which_hemisphere(chan_names):
+    """
+    Return a list of bool reflecting whether the channel names are from right or left hemisphere (10-20 system).
+    :param chan_names: (list of str) list of channel names.
+    :return: is_right_hemisphere (list of bool) True if channel is from right hemisphere, False if channel is from left
+        hemisphere.
+    """
+    try:
+        chan_number = [int(re.search("[0-9]+", chan).group()) for chan in chan_names]
+    except AttributeError as e:
+        raise ValueError(
+            f"{e}. Input channel names should belong to one of the 2 hemisphere according to the 10-20 "
+            "system"
+        )
+    is_right_hemisphere = [not num & 1 for num in chan_number]
+    return is_right_hemisphere
+
+
 class SleepChecker:
     """
-    Wrapper object for the yasa
-
-    Function using the yasa package to detect sleep stages in raw eeg data. Each detection are done on 30-sec epochs.
-    It returns a list of sleep stages detected (W, N1, N2, N3, R) and can optionally annotate the resulting stages on
-    the input MNE raw.
-    :param raw_eeg:
-    :param eeg_name: (str of list of str) EEG channels used for the sleep detection. Can be a channel name or list
+    Wrapper of the yasa SleepStaging module which is an automatic sleep staging algorithm.
+    :param raw_eeg: (MNE Raw object): An instance of MNE Raw.
+    :param eeg_name: (str or list of str) EEG channels used for the sleep detection. Can be a channel name or list
         of channel name.
     :param eog_name: (str) EOG channel used for the sleep detection (add it only if the channel quality is correct).
     :param keepN1: (bool) Whether to consider N1 or not as it is the most misclassified class.
-    :param ref_channel: (str of list of str) can be a channel name or a list of channel name used to construct a
+    :param ref_channel: (str or list of str) can be a channel name or a list of channel name used to construct a
         reference or 'average' or 'REST'.
-    :return:
     """
-    def __init__(
-        self, raw_eeg, eeg_name="C4", eog_name=None, ref_channel="M1", keepN1=False
-    ):
+
+    def __init__(self, raw_eeg, eeg_name="C4", eog_name=None, ref_channel="M1", keepN1=False):
         assert isinstance(raw_eeg, mne.io.BaseRaw)
         assert isinstance(eeg_name, str) or is_list_of_strings(eeg_name)
         assert isinstance(eog_name, (str, type(None)))
@@ -32,7 +44,7 @@ class SleepChecker:
 
         if isinstance(eeg_name, str):
             eeg_name = [eeg_name]
-        if isinstance(ref_channel, str) and ref_channel not in ['average', 'REST']:
+        if isinstance(ref_channel, str) and ref_channel not in ["average", "REST"]:
             ref_channel = [ref_channel]
 
         ch_names = eeg_name.copy()
@@ -53,31 +65,16 @@ class SleepChecker:
         self._tot_sleep_percentage = None
         self._sleep_onset = []
 
-    def _which_hemisphere(chan_names):
-        """
-        Return list of bool reflecting whether the channel name are from right hemisphere or right (10-20 system).
-        :param chan_names:
-        :return: is_right_hemisphere (list of bool) True if channel is from right hemisphere, False if channel is from left
-            hemisphere.
-        """
-        try:
-            chan_number = [int(re.search("[0-9]+", chan).group()) for chan in chan_names]
-        except AttributeError as e:
-            raise ValueError(
-                f"{e}. input channel names should belong to one of the 2 hemisphere according to the 10-20 "
-                "system")
-        is_right_hemisphere = [not num & 1 for num in chan_number]
-        return is_right_hemisphere
-
     def _combine_predictions(self, predictions):
         """
-        Keep the resulting sleeping stages if predicted in every prediction array.
-        It will check rows by index according to the 1st one then check the resulting boolean columns.
-        :param predictions: (array)
-        :return: res (array)
+        Keep the resulting sleeping stages if predicted in every prediction array. It will check rows by index
+        and compare to the first row then check the resulting boolean columns.
+        :param predictions: (array) All the predicted sleep stages.
+        :return: res (array) The final array containing the sleep stages that have reached consensus among the various
+            predictions.
         """
         check = np.all(predictions == predictions[0, :], axis=0)
-        res = np.zeros((len(check)),  dtype='U2')
+        res = np.zeros((len(check)), dtype="U2")
         for i in range(len(check)):
             if check[i]:
                 if predictions[0][i] == "N1" or (not self.keepN1 and predictions[0][i] == "N1"):
@@ -89,7 +86,12 @@ class SleepChecker:
         return res
 
     def predict(self):
-
+        """
+        Use the yasa LGBMClassifier to predict sleep stages for each 30-sec epoch of data using all the eeg, eog and
+        reference channels provided. Return the final array of predicted sleep stage that have reached consensus among
+        the various predictions.
+        :return: (array) The predicted sleep stages.
+        """
         ref_channel = ["M1", "M2"]
         OneRefOneHemisphere = False
         predictions = None
@@ -129,7 +131,9 @@ class SleepChecker:
                     predictions = np.vstack(
                         (
                             predictions,
-                            yasa.SleepStaging(self.data, eeg_name=eeg_ch, eog_name=self.eog_name).predict(),
+                            yasa.SleepStaging(
+                                self.data, eeg_name=eeg_ch, eog_name=self.eog_name
+                            ).predict(),
                         )
                     )
                 else:
@@ -141,55 +145,58 @@ class SleepChecker:
         return self._sleep_stages
 
     def _check_sleep_stages(self, sleep_stages):
+        """
+        Verify the sleep stages provided.
+        """
         if sleep_stages is None and self._sleep_stages is None:
             raise ValueError("Must call .predict before this function")
         if sleep_stages is None:
             sleep_stages = self._sleep_stages.copy()
         else:
             assert isinstance(sleep_stages, np.ndarray), "sleep_stages must be an numpy array"
-            if not all(ele in ['W', 'N1', 'N2', 'N3', 'R'] for ele in list(sleep_stages)):
-                raise ValueError("input sleep stage contains values not in ['W', 'N1', 'N2', 'N3', 'R']")
+            if not all(ele in ["W", "N1", "N2", "N3", "R"] for ele in list(sleep_stages)):
+                raise ValueError(
+                    "input sleep stage contains values not in ['W', 'N1', 'N2', 'N3', 'R']"
+                )
         return sleep_stages
 
     def annotate_data(self, sleep_stages=None, SpecifyStage=False):
         """
-        Annotate as 'bad' the time segment identified as sleep phases.
-        :param sleep_stages:
+        Annotate as 'bad' the time segments identified as sleep phases.
+        :param sleep_stages: (array) The predicted sleep stages.
         :param SpecifyStage: (bool) If True, annotations will specify sleep stages.
-        :return:
+        :return: (MNE Raw object): An instance of MNE Raw with the annotated sleep time segments.
         """
         sleep_stages = self._check_sleep_stages(sleep_stages)
         sleep_phases = []
         for i in range(len(sleep_stages)):
-            if sleep_stages[i] != 'W':
-                self._sleep_onset.append(i*30)
+            if sleep_stages[i] != "W":
+                self._sleep_onset.append(i * 30)
                 sleep_phases.append(sleep_stages[i])
 
-        description = ['bad'] * len(self._sleep_onset)
+        description = ["bad"] * len(self._sleep_onset)
         if SpecifyStage:
-            description = [': '.join(z) for z in zip(description, sleep_phases)]
+            description = [": ".join(z) for z in zip(description, sleep_phases)]
 
         my_annot = mne.Annotations(
-            onset=self._sleep_onset,
-            duration=[30] * len(self._sleep_onset),
-            description=description
+            onset=self._sleep_onset, duration=[30] * len(self._sleep_onset), description=description
         )
         return self.data.set_annotations(my_annot)
 
     def get_tot_sleep_percentage(self, sleep_stages=None):
         """
-        Return the total percentage of time asleep.
-        :return: self._tot_sleep_percentage (float) percentage of time asleep according to sleep stages and raw data.
+        Return the total percentage of time asleep during an EEG recording session.
+        :return: self._tot_sleep_percentage (float) percentage of time asleep.
         """
         sleep_stages = self._check_sleep_stages(sleep_stages)
         sleep_cnt = 0
-        if sleep_stages[-1] != 'W':
+        if sleep_stages[-1] != "W":
             if len(sleep_stages) > len(self.data.times) / 512 // 30:
-                sleep_cnt += len(self.data.times) / self.data.info['sfreq'] % 30 / 30
+                sleep_cnt += len(self.data.times) / self.data.info["sfreq"] % 30 / 30
             else:
                 sleep_cnt += 1
         for i in range(len(sleep_stages)):
-            if sleep_stages[i] != 'W':
+            if sleep_stages[i] != "W":
                 sleep_cnt += 1
             self._tot_sleep_percentage = sleep_cnt / len(sleep_stages) * 100
 
