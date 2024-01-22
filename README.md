@@ -2,6 +2,10 @@
 
 Wrapper of the yasa package (https://github.com/raphaelvallat/yasa/tree/master) to have a simple class allowing to:
 
+=> wrap only:
+Automatic sleep staging function : automatic_staging: Automatic sleep staging of polysomnography data.
+
+
 Combine predictions from several EEG electrodes to return the Sleep Stages predicted
 
 Method to get overall sleep percentage detected on the EEG data
