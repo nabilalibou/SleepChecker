@@ -2,7 +2,6 @@ import numpy as np
 import yasa
 import mne
 import re
-from checks import is_list_of_strings
 
 
 class SleepChecker:
@@ -19,9 +18,9 @@ class SleepChecker:
 
     def __init__(self, raw_eeg, eeg_name="C4", eog_name=None, ref_channel="M1", keepN1=False):
         assert isinstance(raw_eeg, mne.io.BaseRaw)
-        assert isinstance(eeg_name, str) or is_list_of_strings(eeg_name)
+        assert isinstance(eeg_name, str) or self.is_list_of_strings(eeg_name)
         assert isinstance(eog_name, (str, type(None)))
-        assert isinstance(ref_channel, str) or is_list_of_strings(ref_channel)
+        assert isinstance(ref_channel, str) or self.is_list_of_strings(ref_channel)
         assert isinstance(keepN1, bool)
 
         if isinstance(eeg_name, str):
@@ -48,7 +47,7 @@ class SleepChecker:
         self._sleep_onset = []
 
     @staticmethod
-    def _which_hemisphere(chan_names):
+    def which_hemisphere(chan_names):
         """
         Return a list of bool reflecting whether the channel names are from right or left hemisphere (10-20 system).
         :param chan_names: (list of str) list of channel names.
@@ -64,6 +63,20 @@ class SleepChecker:
             )
         is_right_hemisphere = [not num & 1 for num in chan_number]
         return is_right_hemisphere
+
+    @staticmethod
+    def is_list_of_strings(lst):
+        """
+        Check if input variable is a list of strings.
+        Note: Should check for basestring instead of str since it's a common class from which both the str and unicode
+        types inherit from. Checking only the str leaves out the unicode types.
+        :param lst:
+        :return: (bool)
+        """
+        if lst and isinstance(lst, list):
+            return all(isinstance(elem, str) for elem in lst)
+        else:
+            return False
 
     def _combine_predictions(self, predictions):
         """
@@ -97,7 +110,7 @@ class SleepChecker:
         predictions = None
         is_rh = []
         if len(ref_channel) == 2:
-            is_rh = _which_hemisphere(ref_channel)
+            is_rh = self.which_hemisphere(ref_channel)
             if is_rh[0] != is_rh[1]:
                 OneRefOneHemisphere = True
         if OneRefOneHemisphere:
@@ -109,7 +122,7 @@ class SleepChecker:
             raw_lh.set_eeg_reference(
                 ref_channels=[ref_channel[~np.where(is_rh)[0][0]]], ch_type="eeg"
             )
-            is_rh = [int(val) for val in _which_hemisphere(self.eeg_name)]
+            is_rh = [int(val) for val in self.which_hemisphere(self.eeg_name)]
             for i, eeg_ch in enumerate(self.eeg_name):
                 if i:
                     predictions = np.vstack(
