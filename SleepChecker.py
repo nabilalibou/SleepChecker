@@ -7,13 +7,15 @@ import re
 class SleepChecker:
     """
     Wrapper of the yasa SleepStaging module which is an automatic sleep staging algorithm.
-    :param raw_eeg: (MNE Raw object): An instance of MNE Raw.
-    :param eeg_name: (str or list of str) EEG channels used for the sleep detection. Can be a channel name or list
-        of channel name.
-    :param eog_name: (str) EOG channel used for the sleep detection (add it only if the channel quality is correct).
-    :param keepN1: (bool) Whether to consider N1 or not as it is the most misclassified class.
-    :param ref_channel: (str or list of str) can be a channel name or a list of channel name used to construct a
-        reference or 'average' or 'REST'.
+    Parameters
+    ----------
+    raw_eeg: (MNE Raw object): An instance of MNE Raw.
+    eeg_name: (str | list of str) EEG channels used for the sleep detection. Can be a channel name or list of channel
+        name.
+    eog_name: (str) EOG channel used for the sleep detection (add it only if the channel quality is correct).
+    keepN1: (bool) Whether to consider N1 or not as it is the most misclassified class.
+    ref_channel: (str | list of str) can be a channel name or a list of channel name used to construct a reference or
+        'average' or 'REST'.
     """
 
     def __init__(self, raw_eeg, eeg_name="C4", eog_name=None, ref_channel="M1", keepN1=False):
@@ -50,8 +52,12 @@ class SleepChecker:
     def which_hemisphere(chan_names):
         """
         Return a list of bool reflecting whether the channel names are from right or left hemisphere (10-20 system).
-        :param chan_names: (list of str) list of channel names.
-        :return: is_right_hemisphere (list of bool) True if channel is from right hemisphere, False if channel is from left
+        Parameters
+        ----------
+        chan_names: (list of str) list of channel names.
+        Returns
+        -------
+        is_right_hemisphere (list of bool) True if channel is from right hemisphere, False if channel is from left
             hemisphere.
         """
         try:
@@ -67,11 +73,15 @@ class SleepChecker:
     @staticmethod
     def is_list_of_strings(lst):
         """
-        Check if input variable is a list of strings.
+        Check if input object is a list of strings.
         Note: Should check for basestring instead of str since it's a common class from which both the str and unicode
         types inherit from. Checking only the str leaves out the unicode types.
-        :param lst:
-        :return: (bool)
+        Parameters
+        ----------
+        lst: (object) input object to be checked.
+        Returns
+        -------
+        (bool) Whether input variable is a list of strings or not.
         """
         if lst and isinstance(lst, list):
             return all(isinstance(elem, str) for elem in lst)
@@ -82,8 +92,12 @@ class SleepChecker:
         """
         Keep the resulting sleeping stages if predicted in every prediction array. It will check rows by index
         and compare to the first row then check the resulting boolean columns.
-        :param predictions: (array) All the predicted sleep stages.
-        :return: res (array) The final array containing the sleep stages that have reached consensus among the various
+        Parameters
+        ----------
+        predictions: (array) All the predicted sleep stages.
+        Returns
+        -------
+        res (array) The final array containing the sleep stages that have reached consensus among the various
             predictions.
         """
         check = np.all(predictions == predictions[0, :], axis=0)
@@ -103,7 +117,9 @@ class SleepChecker:
         Use the yasa LGBMClassifier to predict sleep stages for each 30-sec epoch of data using all the eeg, eog and
         reference channels provided. Return the final array of predicted sleep stage that have reached consensus among
         the various predictions.
-        :return: (array) The predicted sleep stages.
+        Returns
+        -------
+        sleep_stages (array) The predicted sleep stages.
         """
         ref_channel = ["M1", "M2"]
         OneRefOneHemisphere = False
@@ -176,9 +192,13 @@ class SleepChecker:
     def annotate_data(self, sleep_stages=None, SpecifyStage=False):
         """
         Annotate as 'bad' the time segments identified as sleep phases.
-        :param sleep_stages: (array) The predicted sleep stages.
-        :param SpecifyStage: (bool) If True, annotations will specify sleep stages.
-        :return: (MNE Raw object): An instance of MNE Raw with the annotated sleep time segments.
+        Parameters
+        ----------
+        sleep_stages: (array) The predicted sleep stages.
+        SpecifyStage: (bool) If True, annotations will specify sleep stages.
+        Returns
+        -------
+        data (MNE Raw object): An instance of MNE Raw with the annotated sleep time segments.
         """
         sleep_stages = self._check_sleep_stages(sleep_stages)
         sleep_phases = []
@@ -199,7 +219,12 @@ class SleepChecker:
     def get_tot_sleep_percentage(self, sleep_stages=None):
         """
         Return the total percentage of time asleep during an EEG recording session.
-        :return: self._tot_sleep_percentage (float) percentage of time asleep.
+        Parameters
+        ----------
+        sleep_stages (array): Predicted sleep stages.
+        Returns
+        -------
+        tot_sleep_percentage (float) percentage of time asleep.
         """
         sleep_stages = self._check_sleep_stages(sleep_stages)
         sleep_cnt = 0
