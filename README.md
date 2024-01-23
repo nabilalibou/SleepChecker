@@ -12,7 +12,7 @@ To achieve this, the **SleepChecker** class provides the methods to:
 # Installation
 
 ```
-git clone https://github.com/Nabil-AL/SleepChecker.git
+git clone https://github.com/nabilalibou/SleepChecker.git
 pip install -r requirements.txt
 ```
 
