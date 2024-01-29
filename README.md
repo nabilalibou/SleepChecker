@@ -5,7 +5,7 @@ SleepStaging module which is an automatic sleep staging algorithm. The idea behi
 pacakge to robustly detect when the subject has fallen asleep, as this happens much more than we think (especially 
 during Resting State paradigms).  
 To achieve this, the **SleepChecker** class provides the methods to:
-- Automatically combine the sleep stages predictions into one final robust prediction.
+- Automatically combine the sleep stages predictions into one final robust prediction (majority voting).
 - Get the total percentage of time asleep during an EEG recording session.
 - Annotate sleeping time segments on the [MNE](https://mne.tools/stable/index.html) raw EEG data.
 
