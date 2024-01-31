@@ -201,6 +201,7 @@ class SleepChecker:
         data (MNE Raw object): An instance of MNE Raw with the annotated sleep time segments.
         """
         sleep_stages = self._check_sleep_stages(sleep_stages)
+        data_annot = self.data.annotations  # store current annotations to not erase them
         sleep_phases = []
         for i in range(len(sleep_stages)):
             if sleep_stages[i] != "W":
@@ -214,7 +215,7 @@ class SleepChecker:
         my_annot = mne.Annotations(
             onset=self._sleep_onset, duration=[30] * len(self._sleep_onset), description=description
         )
-        return self.data.set_annotations(my_annot)
+        return self.data.set_annotations(data_annot + my_annot)
 
     def get_tot_sleep_percentage(self, sleep_stages=None):
         """
