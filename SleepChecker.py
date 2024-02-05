@@ -211,11 +211,12 @@ class SleepChecker:
         description = ["bad"] * len(self._sleep_onset)
         if SpecifyStage:
             description = [": ".join(z) for z in zip(description, sleep_phases)]
-
-        my_annot = mne.Annotations(
-            onset=self._sleep_onset, duration=[30] * len(self._sleep_onset), description=description
-        )
-        return self.data.set_annotations(data_annot + my_annot)
+        if self._sleep_onset:
+            my_annot = mne.Annotations(
+                onset=self._sleep_onset, duration=[30] * len(self._sleep_onset), description=description
+            )
+            return self.data.set_annotations(data_annot + my_annot)
+        return self.data
 
     def get_tot_sleep_percentage(self, sleep_stages=None):
         """
