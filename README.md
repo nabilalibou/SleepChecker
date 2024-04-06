@@ -1,13 +1,14 @@
-# SleepChecker
+# SleepChecker: A Simplified Wrapper for Robust Sleep Stage Detection in EEG
 
-Wrapper of the [yasa](https://raphaelvallat.com/yasa/build/html/index.html) [[1]](#1) 
-SleepStaging module which is an automatic sleep staging algorithm. The idea behind **SleepChecker** is to have a simple 
-package to robustly detect when the subject has fallen asleep, as this happens much more than we think (especially 
-during Resting State paradigms).  
-To achieve this, the **SleepChecker** class provides the methods to:
-- Automatically combine the sleep stages predictions into one final robust prediction (~ majority voting).
-- Get the total percentage of time asleep during an EEG recording session.
-- Annotate sleeping time segments on the [MNE](https://mne.tools/stable/index.html) raw EEG data.
+SleepChecker simplifies the process of detecting sleep stages in EEG recordings. It wraps the powerful 
+[yasa](https://raphaelvallat.com/yasa/build/html/index.html) [[1]](#1) SleepStaging module, providing a 
+user-friendly interface for robust sleep detection.
+
+Key Features:
+
+- Automated Sleep Stage Classification: Combines predictions from the underlying algorithm for a single, reliable sleep stage label.
+- Total Sleep Time: Calculates the total percentage of time spent asleep during the recording.
+- Sleep Annotation: Annotates sleep segments directly onto your [MNE](https://mne.tools/stable/index.html) raw EEG data for easy visualization and analysis.
 
 # Installation
 
